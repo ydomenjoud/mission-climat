@@ -1,274 +1,115 @@
-const getSimulatorResults = require('../public/javascripts/getSimulatorResults.js')
+const getSimulatorResults = require('../public/javascripts/getSimulatorResults.js');
 const express = require("express");
 const router = new express.Router();
-const fs = require('fs');
-const readline = require('readline');
 const {google} = require('googleapis');
 require("dotenv").config();
+const {watch, formatNumber } = require('../utils');
 
-
-
-router.get("/download/:id", (req, res, next) => {
-
-  const idSheet = req.params.id
-
-  console.log(idSheet)
-
-  async function main () {
-    
-    const auth = new google.auth.GoogleAuth({
-      // Scopes can be specified either as an array or as a single, space-delimited string.
-      scopes: ['https://www.googleapis.com/auth/drive']
-    });
-
-    const drive = google.drive({version: 'v3', auth});
-
-    var dest = fs.createWriteStream('../../../../../Ironhack');
-    
-    drive.files.export({
-      fileId: idSheet,
-      mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    })
-    .then(response => {
-      //console.log(res))
-      res.status(200).json({ results: response})
-    })
-    .catch(err => console.log(err))
-  }
-  main().catch(res.status(500))
-
+/** functions **/
+const updateSpreadsheet = (spreadsheetId, values) => sheets.spreadsheets.values.update({
+  spreadsheetId,
+  range: rangeParams,
+  valueInputOption: 'RAW',
+  resource: {values}
 });
 
+///////// set global vars ////////////
+const auth = new google.auth.GoogleAuth({scopes: ['https://www.googleapis.com/auth/drive']});
+const drive = google.drive({version: 'v3', auth});
+const sheets = google.sheets({version: 'v4', auth});
+const rangeParams = 'Paramètres!J3:J37';
 
-
-// //route permettant de récupérer les valeurs des paramètres d'une spreadsheet déjà créée
-//   router.get("/values/:id", (req, res, next) => {
-  
-//     // If modifying these scopes, delete token.json.
-//   const SCOPES = ['https://www.googleapis.com/auth/drive'];
-  
-//     function formatNumber(number, isPercent) {
-//       var numberFormated = Number(number.replace(",", "."))
-//       isPercent == 1 ? numberFormated *= 100 : "kikou"
-//       return numberFormated
-//     }
-  
-//     async function main () {
-//         // This method looks for the GCLOUD_PROJECT and GOOGLE_APPLICATION_CREDENTIALS
-//         // environment variables.
-//         const auth = new google.auth.GoogleAuth({
-//           // Scopes can be specified either as an array or as a single, space-delimited string.
-//           scopes: ['https://www.googleapis.com/auth/drive']
-//         });
-
-//         const idSheet=req.params.id
-//         const rangeParams = 'Paramètres!F3:J37'
-
-//         const sheets = google.sheets({version: 'v4', auth});
-    
-//         sheets.spreadsheets.values
-//         .get({
-//             spreadsheetId: idSheet,
-//             range: rangeParams,
-//         })
-//         .then(response => {
-
-//             var rows=response.data.values
-//             var values = []
-
-//             rows.forEach(row => {
-//             !isNaN(Number(row[4].replace(",","."))) ? values.push([formatNumber(row[4],row[0]==="%")]) : values.push([row[4]])
-//             })
-
-//             res.status(200).json({ values: values})
-//         })
-//         .catch(res.status(500))
-
-//     }
-//     main().catch(res.status(500))
-  
-//   })
-
+///////// define routes ////////////
 
 //copie de la spreadsheet master. Renvoie l'ID de la copie
-router.get("/", (req, res, next) => {
+// + autoriser tout le monde à modifier ce fichier
+router.get("/", (req, res) => {
+  const fileId = process.env.SPREADSHEET_MASTER_ID;
+  const promise = drive.files.copy({fileId}).then(res => {
+    return drive.permissions.create({
+      fileId: res.data.id,
+      resource: {
+        role: "writer",
+        type: "anyone"
+      }
+    })
+      .then(() => ({id: res.data.id}))
+      .catch(err => console.log(err))
+  });
 
-  async function main () {
-    
-    const auth = new google.auth.GoogleAuth({
-      // Scopes can be specified either as an array or as a single, space-delimited string.
-      scopes: ['https://www.googleapis.com/auth/drive']
-    });
-
-    const drive = google.drive({version: 'v3', auth});
-
-    drive.files.copy({fileId: process.env.SPREADSHEET_MASTER_ID})
-          .then(dbRes => {
-            res.status(200).json({ id:dbRes.data.id })
-          })
-          .catch(res.status(500))
-
-    }
-    main().catch(res.status(500))
-
+  watch(promise, res);
 });
 
+// téléchargement de la feuille
+router.get("/download/:id", (req, res) => {
+  const fileId = req.params.id;
+  const mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+  const promise = drive.files.export({fileId, mimeType}).then(results => ({results}));
 
+  watch(promise, res);
+});
 
 //route permettant de récupérer les valeurs des paramètres d'une spreadsheet déjà créée
-  router.get("/values/:id", (req, res, next) => {
-  
-    // If modifying these scopes, delete token.json.
-  const SCOPES = ['https://www.googleapis.com/auth/drive'];
-  
-    function formatNumber(number, isPercent) {
-      var numberFormated = Number(number.replace(",", "."))
-      isPercent == 1 ? numberFormated *= 100 : "kikou"
-      return numberFormated
-    }
-  
-    async function main () {
-        // This method looks for the GCLOUD_PROJECT and GOOGLE_APPLICATION_CREDENTIALS
-        // environment variables.
-        const auth = new google.auth.GoogleAuth({
-          // Scopes can be specified either as an array or as a single, space-delimited string.
-          scopes: ['https://www.googleapis.com/auth/drive']
-        });
+router.get("/values/:id", (req, res) => {
 
-        const idSheet=req.params.id
-        const rangeParams = 'Paramètres!F3:J37'
+  const spreadsheetId = req.params.id;
+  const range = 'Paramètres!F3:J37';
 
-        const sheets = google.sheets({version: 'v4', auth});
-    
-        sheets.spreadsheets.values
-        .get({
-            spreadsheetId: idSheet,
-            range: rangeParams,
-        })
-        .then(response => {
+  const promise = sheets.spreadsheets.values
+    .get({spreadsheetId, range})
+    .then(response => {
+      const rows = response.data.values;
+      return rows.map(row => !isNaN(Number(row[4].replace(",", "."))) ? [formatNumber(row[4], row[0] === "%")] : [row[4]]);
+    });
 
-            var rows=response.data.values
-            var values = []
+  watch(promise, res);
 
-            rows.forEach(row => {
-            !isNaN(Number(row[4].replace(",","."))) ? values.push([formatNumber(row[4],row[0]==="%")]) : values.push([row[4]])
-            })
-
-            res.status(200).json({ values: values})
-        })
-        .catch(res.status(500))
-
-    }
-    main().catch(res.status(500))
-  
-  })
-  
+});
 
 
 //actualisation de la sheet avec de nouveaux paramètres et renvoi des résultats correspondants
-  router.patch("/update/:id", (req, res, next) => {
-  
-    const SCOPES = ['https://www.googleapis.com/auth/spreadsheets'];
+router.patch("/update/:id", (req, res) => {
 
-    async function main () {
-        // This method looks for the GCLOUD_PROJECT and GOOGLE_APPLICATION_CREDENTIALS
-        // environment variables.
-        const auth = new google.auth.GoogleAuth({scopes: SCOPES})
-  
-        const idSheet=req.params.id
-        const values=req.body.values
-        const rangeParams = 'Paramètres!J3:J37'
-        const rangeOutputs = 'Résultats!A1:BB300'
+  // @TODO on ne doit pas pouvoir update la feuille master
+  const spreadsheetId = req.params.id;
+  const values = req.body.values;
+  const rangeOutputs = 'Résultats!A1:BB300';
 
-        const sheets = google.sheets({version: 'v4', auth});
-    
-        sheets.spreadsheets.values.update({
-            spreadsheetId: idSheet,
-            range: rangeParams,
-            valueInputOption: 'RAW',
-            "resource": {
-            "values": values
-            }
-            })
-        .then(response => {
-            sheets.spreadsheets.values.get({
-            spreadsheetId: idSheet,
-            range: rangeOutputs,
-            })
-            .then(response => {
-            var rows=response.data.values
-            var results = getSimulatorResults(rows)
-            res.status(200).json({ results: results})
-            })
-            .catch(res.status(500))
-        })
-        .catch(res.status(500))
-  
-    }
-    main().catch(res.status(500))
-  
-  })
+  const promise = updateSpreadsheet(spreadsheetId, values)
+    .then(() => {
+      return sheets.spreadsheets.values.get({spreadsheetId, range: rangeOutputs});
+    })
+    .then(response => {
+      const rows = response.data.values;
+      const results = getSimulatorResults(rows);
+      return {results};
+    });
+
+  watch(promise, res);
+});
 
 
-  //actualisation de la sheet avec de nouveaux paramètres et c'est tout (utile pour la réinite)
-  router.patch("/updateonly/:id", (req, res, next) => {
-  
-    const SCOPES = ['https://www.googleapis.com/auth/spreadsheets'];
+//actualisation de la sheet avec de nouveaux paramètres et c'est tout (utile pour la réinite)
+router.patch("/updateonly/:id", (req, res) => {
+  // @TODO on ne doit pas pouvoir update la feuille master
+  const spreadsheetId = req.params.id;
+  const values = req.body.values;
+  const promise = updateSpreadsheet(spreadsheetId, values).then(() => ({response: "done"}));
 
-    async function main () {
-        // This method looks for the GCLOUD_PROJECT and GOOGLE_APPLICATION_CREDENTIALS
-        // environment variables.
-        const auth = new google.auth.GoogleAuth({scopes: SCOPES})
-  
-        const idSheet=req.params.id
-        const values=req.body.values
-        const rangeParams = 'Paramètres!J3:J37'
-
-        const sheets = google.sheets({version: 'v4', auth});
-    
-        sheets.spreadsheets.values.update({
-            spreadsheetId: idSheet,
-            range: rangeParams,
-            valueInputOption: 'RAW',
-            "resource": {
-            "values": values
-            }
-            })
-        .then(response => {  
-          res.status(200).json({ response:"done"})
-        })
-        .catch(res.status(500))
-    }
-    main().catch(res.status(500))
-  
-  })
+  watch(promise, res);
+});
 
 
-  router.delete("/delete/:id", (req, res, next) => {
-  
-    const idFile=req.params.id
-    const SCOPES = ['https://www.googleapis.com/auth/drive'];
-  
-    async function main () {
-        // This method looks for the GCLOUD_PROJECT and GOOGLE_APPLICATION_CREDENTIALS
-        // environment variables.
-        const auth = new google.auth.GoogleAuth({scopes: SCOPES})
-  
-        const drive = google.drive({version: 'v3', auth});
-    
-        drive.files.delete({fileId: idFile})
-            .then(dbRes => {
-                res.status(200).json({ data:"File " + idFile + " deleted" })
-            })
-            .catch(err=> {
-              res.status(500)
-            })
-  
-    }
-    main().catch(res.status(500))
-  
-  })
+// suppression de la route
+router.delete("/delete/:id", (req, res) => {
 
-  module.exports = router;
-  
-  
+  // @TODO on ne doit pas pouvoir supprimer la feuille master
+  const fileId = req.params.id;
+  const promise = drive.files.delete({fileId}).then(() => ({data: "File " + fileId + " deleted"}));
+
+  watch(promise, res);
+
+});
+
+module.exports = router;
+

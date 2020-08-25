@@ -4,3 +4,8 @@ public/javascripts/convertSheetToJSON.js
 gcredentials.json
 credentialsGSheet.json
 tokenGSheet.json
+/.directory
+/.idea/
+/dist/
+/mc.local.config.js
+/[0-9]*
