@@ -20,13 +20,13 @@ jobs:
           npm run build
 
       - name: copy file to server
-        uses: appleboy/scp-action@master
+        uses: nogsantos/scp-deploy@master
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.KEY }}
-          source: "dist/*"
-          target: "server"
+          src: "./dist/*"
+          remote: "./server"
 
       - name: reload pm2
         uses: appleboy/ssh-action@master
