@@ -17,7 +17,7 @@ const updateSpreadsheet = (spreadsheetId, values) => sheets.spreadsheets.values.
 const auth = new google.auth.GoogleAuth({scopes: ['https://www.googleapis.com/auth/drive']});
 const drive = google.drive({version: 'v3', auth});
 const sheets = google.sheets({version: 'v4', auth});
-const rangeParams = 'Paramètres!J3:J37';
+const rangeParams = 'Paramètres!J3:J31';
 
 ///////// define routes ////////////
 
@@ -25,7 +25,9 @@ const rangeParams = 'Paramètres!J3:J37';
 // + autoriser tout le monde à modifier ce fichier
 router.get("/", (req, res) => {
   const fileId = process.env.SPREADSHEET_MASTER_ID;
+  console.log(fileId)
   const promise = drive.files.copy({fileId}).then(res => {
+    console.log(res.data)
     return drive.permissions.create({
       fileId: res.data.id,
       resource: {
@@ -53,13 +55,14 @@ router.get("/download/:id", (req, res) => {
 router.get("/values/:id", (req, res) => {
 
   const spreadsheetId = req.params.id;
-  const range = 'Paramètres!F3:J37';
+  const range = 'Paramètres!F3:J31';
 
   const promise = sheets.spreadsheets.values
     .get({spreadsheetId, range})
     .then(response => {
       const rows = response.data.values;
-      return rows.map(row => !isNaN(Number(row[4].replace(",", "."))) ? [formatNumber(row[4], row[0] === "%")] : [row[4]]);
+      const values = rows.map(row => !isNaN(Number(row[4].replace(",", "."))) ? [formatNumber(row[4], row[0] === "%")] : [row[4]]);
+      return {"values": values}
     });
 
   watch(promise, res);
