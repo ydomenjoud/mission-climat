@@ -25,9 +25,7 @@ const rangeParams = 'Paramètres!J3:J27';
 // + autoriser tout le monde à modifier ce fichier
 router.get("/", (req, res) => {
   const fileId = process.env.SPREADSHEET_MASTER_ID;
-  console.log(fileId)
   const promise = drive.files.copy({fileId}).then(res => {
-    console.log(res.data)
     return drive.permissions.create({
       fileId: res.data.id,
       resource: {
@@ -62,7 +60,7 @@ router.get("/values/:id", (req, res) => {
     .then(response => {
       const rows = response.data.values;
       const values = rows.map(row => !isNaN(Number(row[4].replace(",", "."))) ? [formatNumber(row[4], row[0] === "%")] : [row[4]]);
-      return {"values": values}
+      return {values};
     });
 
   watch(promise, res);
