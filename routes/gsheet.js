@@ -17,7 +17,7 @@ const updateSpreadsheet = (spreadsheetId, values) => sheets.spreadsheets.values.
 const auth = new google.auth.GoogleAuth({scopes: ['https://www.googleapis.com/auth/drive']});
 const drive = google.drive({version: 'v3', auth});
 const sheets = google.sheets({version: 'v4', auth});
-const rangeParams = 'Paramètres!J3:J31';
+const rangeParams = 'Paramètres!J3:J27';
 
 ///////// define routes ////////////
 
@@ -55,7 +55,7 @@ router.get("/download/:id", (req, res) => {
 router.get("/values/:id", (req, res) => {
 
   const spreadsheetId = req.params.id;
-  const range = 'Paramètres!F3:J31';
+  const range = 'Paramètres!F3:J27';
 
   const promise = sheets.spreadsheets.values
     .get({spreadsheetId, range})
