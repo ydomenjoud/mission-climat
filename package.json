@@ -5,7 +5,8 @@
   "scripts": {
     "start": "node ./bin/www",
     "dev": "nodemon ./bin/www.js -e js",
-    "build": "ncc build bin/www -m -o dist"
+    "build": "ncc build bin/www -m -o dist",
+    "prod:update": "./scripts/update"
   },
   "dependencies": {
     "@vercel/ncc": "0.23.0",

@@ -4,7 +4,7 @@ module.exports = {
       name: "mission-climat",
       script: "./index.js",
       increment_var: 'GOOGLE_APPLICATION_CREDENTIALS',
-      instances: 3,
+      instance: 7,
       namespace: "mc",
       exec_mode: "cluster",
       env: {

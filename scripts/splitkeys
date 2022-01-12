@@ -1,0 +1,37 @@
+#!/bin/bash
+
+source scripts/ips
+
+PM2_CONFIG_FILE='mc.config.js';
+NUMBER_OF_SERVERS=${#IPS[@]}
+WORKING_DIR='./keys/split'
+KEY_FILES=( $(ls keys/*.json) )
+NUMBER_OF_KEY_FILES=${#KEY_FILES[@]}
+
+# if no keys, exit
+if [ 0 -eq "$NUMBER_OF_KEY_FILES" ]; then
+  echo "no keys present"
+  exit 1;
+fi
+
+echo "number of server $NUMBER_OF_SERVERS"
+echo "number of keys $NUMBER_OF_KEY_FILES"
+NUMBER_OF_KEY_FILES_BY_SERVER=$((NUMBER_OF_KEY_FILES / NUMBER_OF_SERVERS))
+echo "files by server $NUMBER_OF_KEY_FILES_BY_SERVER"
+
+# remove work dir if exists
+if [ -d "$WORKING_DIR" ]; then rm -Rf $WORKING_DIR; fi
+mkdir $WORKING_DIR
+
+# split keys
+for (( i=0; i<$((NUMBER_OF_SERVERS)); i++ )); do
+  SERVER_WORKING_DIR=$WORKING_DIR/"$i"
+  echo "split $i : $SERVER_WORKING_DIR";
+  mkdir $SERVER_WORKING_DIR
+  cp "${KEY_FILES[@]:i*NUMBER_OF_KEY_FILES_BY_SERVER:NUMBER_OF_KEY_FILES_BY_SERVER}" $SERVER_WORKING_DIR
+  # rename keys
+  num=0; for j in "$SERVER_WORKING_DIR"/*.json; do mv "$j" "$SERVER_WORKING_DIR"/"$num"; ((num++)); done
+done
+
+# update mc.config.js
+sed -i -e "s/instances: [0-9]\+/instance: $NUMBER_OF_KEY_FILES_BY_SERVER/g" "$PM2_CONFIG_FILE"

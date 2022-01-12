@@ -2,12 +2,14 @@
 
 source scripts/ips
 
-APP='./dist/index.js'
-KEYS
+APP_FILE='./dist/index.js'
+KEYS_DIR='./keys/split'
+PM2_CONFIG='mc.config.js'
 
-for ip in "${IPS[@]}"; do
-    echo upload to "$ip";
-#    scp $APP debian@"$ip":~/server/;
-    echo reload "$ip";
-#    ssh debian@"$ip" "cd server; pm2 flush; pm2 delete mc.config.js; pm2 start mc.config.js;";
+for i in "${!IPS[@]}"; do
+    IP=${IPS[$i]}
+    echo upload "$i" to "$IP";
+    scp -r "$APP_FILE" "$KEYS_DIR/$i" "$PM2_CONFIG" debian@"$IP":~/server/;
+    echo reload "$IP";
+    ssh debian@"$IP" "cd server; pm2 flush; pm2 delete mc.config.js; pm2 start mc.config.js;";
 done
