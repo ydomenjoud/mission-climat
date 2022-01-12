@@ -1,0 +1,10 @@
+#!/bin/bash
+
+source scripts/ips
+
+APP='./dist/index.js'
+
+for ip in "${IPS[@]}"; do
+    echo upload to "$ip";
+#    scp $APP debian@"$ip":~/server/;
+done

@@ -1,9 +1,5 @@
 require("dotenv").config();
-// require("./config/dbConnection");
-var express = require('express');
-var path = require('path');
-var cookieParser = require('cookie-parser');
-var logger = require('morgan');
+const express = require('express');
 const cors = require("cors");
 const bodyParser = require('body-parser');
 
@@ -11,9 +7,9 @@ const bodyParser = require('body-parser');
 const session = require("express-session"); //sessions make data persist between http calls
 const passport = require("passport"); // auth library (needs sessions)
 
-var app = express();
+const app = express();
 
-app.use(logger('dev'));
+// app.use(logger('dev'));
 app.use(express.urlencoded({
   extended: true
 }));
@@ -33,7 +29,7 @@ app.use(
   })
 );
 
-var corsOptions = {
+const corsOptions = {
     origin: [process.env.FRONTEND_URI,process.env.FRONTEND_URL_SECURE],
     credentials: true,
     optionsSuccessStatus: 200
@@ -54,8 +50,5 @@ app.use(passport.session());
 app.get("/", (req, res) => {res.send("hello world")})
 
 app.use('/sheet', require('./routes/gsheet'));
-
-// app.use('/email', require("./routes/email"))
-
 
 module.exports = app;

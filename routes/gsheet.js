@@ -5,19 +5,20 @@ const {google} = require('googleapis');
 require("dotenv").config();
 const {watch, formatNumber } = require('../utils');
 
-/** functions **/
-const updateSpreadsheet = (spreadsheetId, values) => sheets.spreadsheets.values.update({
-  spreadsheetId,
-  range: rangeParams,
-  valueInputOption: 'RAW',
-  resource: {values}
-});
-
 ///////// set global vars ////////////
 const auth = new google.auth.GoogleAuth({scopes: ['https://www.googleapis.com/auth/drive']});
 const drive = google.drive({version: 'v3', auth});
 const sheets = google.sheets({version: 'v4', auth});
-const rangeParams = 'Paramètres!J3:J27';
+const updateRange = process.env.SPREADSHEET_UPDATE_RANGE || '';
+const getRange = process.env.SPREADSHEET_GET_RANGE || '';
+
+/** functions **/
+const updateSpreadsheet = (spreadsheetId, values) => sheets.spreadsheets.values.update({
+  spreadsheetId,
+  range: updateRange,
+  valueInputOption: 'RAW',
+  resource: {values}
+});
 
 ///////// define routes ////////////
 
@@ -53,10 +54,9 @@ router.get("/download/:id", (req, res) => {
 router.get("/values/:id", (req, res) => {
 
   const spreadsheetId = req.params.id;
-  const range = 'Paramètres!F3:J27';
 
   const promise = sheets.spreadsheets.values
-    .get({spreadsheetId, range})
+    .get({spreadsheetId, range: getRange})
     .then(response => {
       const rows = response.data.values;
       const values = rows.map(row => !isNaN(Number(row[4].replace(",", "."))) ? [formatNumber(row[4], row[0] === "%")] : [row[4]]);
@@ -71,10 +71,14 @@ router.get("/values/:id", (req, res) => {
 //actualisation de la sheet avec de nouveaux paramètres et renvoi des résultats correspondants
 router.patch("/update/:id", (req, res) => {
 
-  // @TODO on ne doit pas pouvoir update la feuille master
   const spreadsheetId = req.params.id;
+  if( spreadsheetId === process.env.SPREADSHEET_MASTER_ID) {
+    console.log('trying to edit master sheet');
+    res.status(500).json({error: 'could not update this spreadsheet'});
+    return;
+  }
   const values = req.body.values;
-  const rangeOutputs = 'Résultats!A1:BB300';
+  const rangeOutputs = process.env.SPREADSHEET_OUTPUT_RANGE;
 
   const promise = updateSpreadsheet(spreadsheetId, values)
     .then(() => {
@@ -106,6 +110,11 @@ router.delete("/delete/:id", (req, res) => {
 
   // @TODO on ne doit pas pouvoir supprimer la feuille master
   const fileId = req.params.id;
+  if( fileId === process.env.SPREADSHEET_MASTER_ID) {
+    console.log('trying to delete master sheet');
+    res.status(500).json({error: 'could not delete this spreadsheet'});
+    return;
+  }
   const promise = drive.files.delete({fileId}).then(() => ({data: "File " + fileId + " deleted"}));
 
   watch(promise, res);

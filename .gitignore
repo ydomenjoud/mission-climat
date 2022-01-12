@@ -9,3 +9,5 @@ tokenGSheet.json
 /dist/
 /mc.local.config.js
 /[0-9]*
+/keys/
+/scripts/ips

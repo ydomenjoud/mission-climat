@@ -1,39 +1,39 @@
-name: remote ssh command
-on: [push]
-jobs:
-  build:
-    if: (github.event_name == 'push' && (contains(github.ref, '/heads/master') || contains(github.ref, '/tags/v')))
-    name: Build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-
-      - name: Set node version
-        uses: actions/setup-node@master
-        with:
-          node-version: '10.x'
-
-      - name: build
-        run: |
-          npm i
-          npm run build
-
-      - name: copy file to server
-        uses: nogsantos/scp-deploy@master
-        with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USERNAME }}
-          key: ${{ secrets.KEY }}
-          src: "./dist/*"
-          remote: "./server"
-
-      - name: reload pm2
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USERNAME }}
-          key: ${{ secrets.KEY }}
-          script: |
-            cd server
-            pm2 restart mc.config.js
+#name: remote ssh command
+#on: [push]
+#jobs:
+#  build:
+#    if: (github.event_name == 'push' && (contains(github.ref, '/heads/master') || contains(github.ref, '/tags/v')))
+#    name: Build
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: Checkout
+#        uses: actions/checkout@v2
+#
+#      - name: Set node version
+#        uses: actions/setup-node@master
+#        with:
+#          node-version: '10.x'
+#
+#      - name: build
+#        run: |
+#          npm i
+#          npm run build
+#
+#      - name: copy file to server
+#        uses: nogsantos/scp-deploy@master
+#        with:
+#          host: ${{ secrets.HOST }}
+#          username: ${{ secrets.USERNAME }}
+#          key: ${{ secrets.KEY }}
+#          src: "./dist/*"
+#          remote: "./server"
+#
+#      - name: reload pm2
+#        uses: appleboy/ssh-action@master
+#        with:
+#          host: ${{ secrets.HOST }}
+#          username: ${{ secrets.USERNAME }}
+#          key: ${{ secrets.KEY }}
+#          script: |
+#            cd server
+#            pm2 restart mc.config.js

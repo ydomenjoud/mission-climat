@@ -1,0 +1,13 @@
+#!/bin/bash
+
+source scripts/ips
+
+APP='./dist/index.js'
+KEYS
+
+for ip in "${IPS[@]}"; do
+    echo upload to "$ip";
+#    scp $APP debian@"$ip":~/server/;
+    echo reload "$ip";
+#    ssh debian@"$ip" "cd server; pm2 flush; pm2 delete mc.config.js; pm2 start mc.config.js;";
+done
