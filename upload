@@ -1,0 +1,15 @@
+#!/bin/bash
+
+APP='./dist/index.js'
+IPS=(
+    51.210.159.247
+    51.68.91.161
+    51.91.149.177
+    51.91.150.15
+    51.91.151.117
+)
+
+for ip in ${IPS[@]}; do
+    echo upload to $ip;
+    scp $APP debian@$ip:~/server/;
+done
