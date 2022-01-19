@@ -34,4 +34,4 @@ for (( i=0; i<$((NUMBER_OF_SERVERS)); i++ )); do
 done
 
 # update mc.config.js
-sed -i -e "s/instances: [0-9]\+/instance: $NUMBER_OF_KEY_FILES_BY_SERVER/g" "$PM2_CONFIG_FILE"
+sed -i -e "s/instances: [0-9]\+/instances: $NUMBER_OF_KEY_FILES_BY_SERVER/g" "$PM2_CONFIG_FILE"

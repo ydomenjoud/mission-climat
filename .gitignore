@@ -1,4 +1,5 @@
 .env
+nginx.conf
 node_modules
 public/javascripts/convertSheetToJSON.js
 gcredentials.json

@@ -47,7 +47,11 @@ app.use(cors(corsOptions))
 app.use(passport.initialize());
 app.use(passport.session());
 
-app.get("/", (req, res) => {res.send("hello world")})
+app.get("/", (req, res) => {
+  var fullUrl = req.protocol + '://' + req.get('host') + req.originalUrl;
+  console.log({fullUrl});
+  res.send("hello world");
+});
 
 app.use('/sheet', require('./routes/gsheet'));
 
